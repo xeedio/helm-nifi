@@ -31,7 +31,7 @@ helm install my-release bitnami/keycloak
 
 > "Keycloak is an open source Identity and Access Management solution aimed at modern applications and services. It makes it easy to secure applications and services with little to no code."
 
-Once deployed we can access the user interface and log in: 
+Once deployed we can access the user interface and log in:
 
 <img src="images/installation/keycloak-first-screen.png" alt="Keycloak login"/>
 
@@ -106,4 +106,3 @@ The management page for the new user opens, we Click the **Credentials tab** to 
 
 
 then we Click **Set Password** to set the user password to the new one we specified.
-

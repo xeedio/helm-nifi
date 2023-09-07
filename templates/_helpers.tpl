@@ -32,6 +32,27 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Join the extraHosts, replicas and webProxyHost lists
+*/}}
+{{- define "apache-nifi.webProxyHost" -}}
+{{- $replicas := int .Values.replicas }}
+{{- $webProxyHosts := list -}}
+{{- if .Values.properties.webProxyHost -}}
+  {{- $webProxyHosts = .Values.properties.webProxyHost | append $webProxyHosts -}}
+{{- end -}}
+{{- $webProxyHosts = .Values.clusterName | append $webProxyHosts -}}
+{{- range $i := until $replicas }}
+  {{- $webProxyHosts = printf "node%d-%s" $i $.Values.clusterName | append $webProxyHosts -}}
+{{- end -}}
+{{- if .Values.extraHosts -}}
+  {{- range .Values.extraHosts -}}
+    {{- $webProxyHosts = . | append $webProxyHosts -}}
+  {{- end -}}
+{{- end -}}
+{{ join "," $webProxyHosts }}
+{{- end -}}
+
+{{/*
 Form the Zookeeper Server part of the URL. If zookeeper is installed as part of this chart, use k8s service discovery,
 else use user-provided server name
 */}}
@@ -66,17 +87,6 @@ else use user-provided name and port
 {{- printf "http://%s-registry:%s" .Release.Name $port }}
 {{- else -}}
 {{- printf "http://%s:%s" .Values.registry.url $port }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create ca.server
-*/}}
-{{- define "ca.server" }}
-{{- if .Values.ca.enabled -}}
-{{- printf "%s-ca" .Release.Name }}
-{{- else -}}
-{{- printf "%s" .Values.ca.server }}
 {{- end -}}
 {{- end -}}
 

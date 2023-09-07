@@ -4,9 +4,10 @@ kind: ConfigMap
 metadata:
   name: {{ template "apache-nifi.fullname" . }}-config
   labels:
-    app: {{ include "apache-nifi.name" . | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    release: {{ .Release.Name | quote }}
-    heritage: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+    app.kubernetes.io/part-of: nifi
+    app.kubernetes.io/version: {{ .Chart.Version }}
 data:
 {{ (tpl (.Files.Glob "configs/*").AsConfig . ) | indent 2 }}

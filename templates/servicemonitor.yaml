@@ -8,16 +8,19 @@ metadata:
   namespace: {{ . }}
 {{- end }}
   labels:
-    app: {{ include "apache-nifi.name" . | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    release: {{ .Release.Name | quote }}
-    heritage: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+    app.kubernetes.io/part-of: nifi
+    app.kubernetes.io/version: {{ .Chart.Version }}
+    helm.sh/chart: {{ include "apache-nifi.chart" . }}
 {{- if .Values.metrics.prometheus.serviceMonitor.labels }}
 {{ .Values.metrics.prometheus.serviceMonitor.labels | toYaml | indent 4 }}
 {{- end }}
 spec:
   endpoints:
   - port: metrics
+    path: /metrics/prometheus
     honorLabels: true
 {{- if .Values.metrics.prometheus.serviceMonitor.interval }}
     interval: {{ .Values.metrics.prometheus.serviceMonitor.interval }}
@@ -32,8 +35,8 @@ spec:
 {{- end }}
   selector:
     matchLabels:
-      app: {{ template "apache-nifi.name" . }}
-      release: {{ .Release.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace | quote }}

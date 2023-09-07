@@ -36,7 +36,7 @@ The following items can be set via `--set` flag during installation or configure
 #### Configure how to persist data
 
 - **Disable(default)**: The data does not survive the termination of a pod.
-- **Persistent Volume Claim**: Enable persistence so that data survives termination of the pod.  There is the choice of using one large persistent volume (using subPath) or seven separate persistent volumes for config, data, logs, repos, etc.  
+- **Persistent Volume Claim**: Enable persistence so that data survives termination of the pod.  There is the choice of using one large persistent volume (using subPath) or seven separate persistent volumes for config, data, logs, repos, etc.
   A default `StorageClass` is needed in the Kubernetes cluster to dynamically provision the volumes. Specify another StorageClass in the `persistence.storageClass` setting.
 
 #### Configure authentication
@@ -93,7 +93,7 @@ The following table lists the configurable parameters of the nifi chart and the 
 | Parameter                                                                   | Description                                                                                                        | Default                         |
 | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------| ------------------------------- |
 | **ReplicaCount**                                                            |
-| `replicaCount`                                                              | Number of nifi nodes                                                                                               | `1`                             |
+| `replicas`                                                                  | Number of nifi nodes                                                                                               | `1`                             |
 | **Image**                                                                   |
 | `image.repository`                                                          | nifi Image name                                                                                                    | `apache/nifi`                   |
 | `image.tag`                                                                 | nifi Image tag                                                                                                     | `1.16.3`                        |
@@ -124,10 +124,11 @@ The following table lists the configurable parameters of the nifi chart and the 
 | `properties.sensitiveKeySetFile`                                            | [Update Sensitive Properties Key](https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html#updating-the-sensitive-properties-key) if this file does not exist, and then create it. | `nil`                           |
 | `properties.sensitiveKeyPrior`                                              | Prior `sensitiveKey` when updating via `sensitiveKeySetFile` mechanism                                             | `nil`                           |
 | `properties.externalSecure`                                                 | externalSecure for when inbound SSL                                                                                | `false`                         |
-| `properties.isNode`                                                         | cluster node properties (only configure for cluster nodes)                                                         | `false`                          |
+| `properties.isNode`                                                         | cluster node properties (only configure for cluster nodes)                                                         | `true`                          |
 | `properties.httpPort`                                                       | web properties HTTP port                                                                                           | `8080`                          |
 | `properties.httpsPort`                                                      | web properties HTTPS port                                                                                          | `null`                          |
 | `properties.clusterPort`                                                    | cluster node port                                                                                                  | `6007`                          |
+| `properties.siteToSite.enabled`                                             | Enable Site to Site communication                                                                                  | `true`                          |
 | `properties.provenanceStorage`                                              | nifi provenance repository max storage size                                                                        | `8 GB`                          |
 | `properties.provenanceMaxStorageTime`                                       | nifi provenance repository max storage time                                                                        | `10 days`                          |
 | `properties.siteToSite.secure`                                              | Site to Site properties Secure mode                                                                                | `false`                         |
@@ -137,7 +138,7 @@ The following table lists the configurable parameters of the nifi chart and the 
 | `properties.webProxyHost`                               | Proxy to access to Nifi through the cluster ip address    | `Port:30236`
 | **[Authentication](/doc/USERMANAGEMENT.md)**                                                |
 | **Single-user authentication**                                                | Automatically disabled if Client Certificate, OIDC, or LDAP enabled
-| `auth.     admin`                                                           | Default admin identity. It will overwrite the LDAP Bind DN for this purpose, when both is filled                   | ` CN=admin, OU=NIFI`            |
+| `auth.admin`                                                           | Default admin identity. It will overwrite the LDAP Bind DN for this purpose, when both is filled                   | ` CN=admin, OU=NIFI`            |
 | `auth.singleUser.username`                                                                | Single user identity                                                                                             | `username`            |
 | `auth.singleUser.password`                                                         | Single user password                                                                                          | `changemechangeme`                         |
 | **Client Certificate authentication**       |
@@ -174,7 +175,7 @@ The following table lists the configurable parameters of the nifi chart and the 
 | `service.processors.enabled`                                                | Enables additional port/ports to nifi service for internal processors                                              | `false`                         |
 | `service.processors.ports`                                                  | Specify "name/port/targetPort/nodePort" for processors  sockets                                                    | `[]`                            |
 | **ContainerPorts**       |                                                  |
-| `containerPorts`                                                            | Additional containerPorts for the nifi-container. Example is given in values.yaml  | `[]` 
+| `containerPorts`                                                            | Additional containerPorts for the nifi-container. Example is given in values.yaml  | `[]`
 | **Ingress**                                                                 |
 | `ingress.enabled`                                                           | Enables Ingress                                                                                                    | `false`                         |
 | `ingress.className`      | Ingress controller Class                                                                                   | `nginx`                                  |
@@ -196,8 +197,7 @@ The following table lists the configurable parameters of the nifi chart and the 
 | `persistence.contentRepoStorage.size`                                       | Size of persistent volume claim                                                                                    | `10Gi`                          |
 | `persistence.provenanceRepoStorage.size`                                    | Size of persistent volume claim                                                                                    | `10Gi`                          |
 | `persistence.logStorage.size`                                               | Size of persistent volume claim                                                                                    | `5Gi`                           |
-| **jvmMemory**                                                               |
-| `jvmMemory`                                                                 | bootstrap jvm size                                                                                                 | `2g`                            |
+| `persistence.existingClaim`                                                 | Use an existing PVC to persist data                                                                                | `nil`                           |
 | **SideCar**                                                                 |
 | `sidecar.image`                                                             | Separate image for tailing each log separately and checking zookeeper connectivity                                 | `busybox`                       |
 | `sidecar.tag`                                                               | Image tag                                                                                                          | `1.32.0`                        |
@@ -229,11 +229,6 @@ The following table lists the configurable parameters of the nifi chart and the 
 | `extraContainers`                                                           | Additional container-specifications that should run within the pod (see [spec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#container-v1-core) for details)  | `[]`                            |
 | **extraLabels**                                                         |
 | `extraLabels`                                                           | Additional labels for the nifi pod | `nil`                                 |
-| **openshift**                                                                     |
-| `openshift.scc.enabled`                                                     | If true, a openshift security context will be created permitting to run the statefulset as AnyUID | `false` |
-| `openshift.route.enabled`                                                   | If true, a openshift route will be created. This option cannot be used together with Ingress as a route object replaces the Ingress. The property `properties.externalSecure` will configure the route in edge termination mode, the default is passthrough. The property `properties.httpsPort` has to be set if the cluster is intended to work with SSL termination | `false` |
-| `openshift.route.host`                                                      | The hostname intended to be used in order to access NiFi web interface | `nil` |
-| `openshift.route.path`                                                      | Path to access frontend, works the same way as the ingress path option | `nil` |
 | **zookeeper**                                                               |
 | `zookeeper.enabled`                                                         | If true, deploy Zookeeper                                                                                          | `true`                          |
 | `zookeeper.url`                                                             | If the Zookeeper Chart is disabled a URL and port are required to connect                                          | `nil`                           |
@@ -242,27 +237,6 @@ The following table lists the configurable parameters of the nifi chart and the 
 | `registry.enabled`                                                          | If true, deploy [Nifi Registry](https://nifi.apache.org/registry.html)                                                                                          | `false`                          |
 | `registry.url`                                                              | If the Nifi Registry Chart is disabled a URL and port are required to connect                                          | `nil`                           |
 | `registry.port`                                                             | If the Nifi Registry Chart is disabled a URL and port are required to connect                                          | `80`                            |
-| **ca**                                                                      |
-| `ca.enabled`                                                                | If true, deploy Nifi Toolkit as CA                                                                                          | `false`                          |
-| `ca.server`                                                                 | CA server dns name                                          | `nil`                           |
-| `ca.port`                                                                   | CA server port number                                          | `9090`                            |
-| `ca.token`                                                                  | The token to use to prevent MITM                                          | `80`                            |
-| `ca.admin.cn`                                                               | CN for admin certificate                                          | `admin`                            |
-| `ca.serviceAccount.create`                                                 | If true, a service account will be created and used by the deployment                                         | `false`                            |
-| `ca.serviceAccount.name`                                                 |When set, the set name will be used as the service account name. If a value is not provided a name will be generated based on Chart options | `nil` |
-| `ca.openshift.scc.enabled`                                                     | If true, an openshift security context will be created permitting to run the deployment as AnyUID | `false` |
-| **certManager**                                                             |
-| `certManager.enabled`                                                       | If true, use [cert-manager](https://cert-manager.io/) to create and rotate intra-NiFi-cluster TLS keys (note that cert-manager is a Kubernetes cluster-wide resource, so is not installed automatically by this chart) | `false`                         |
-| `certManager.clusterDomain`                                                 | Kubernetes cluster top level domain, to generate fully qualified domain names for certificate Common Names         | `cluster.local`                 |
-| `certManager.keystorePasswd`                                                | Java Key Store password for NiFi keystore                                                                          | `changeme`                      |
-| `certManager.truststorePasswd`                                              | Java Key Store password for NiFi truststore                                                                        | `changeme`                      |
-| `certManager.additionalDnsNames`                                            | Additional DNS names to incorporate into TLS certificates (e.g. where users point browsers to access the NiFi UI)  | `[ localhost ]`                 |
-| `certManager.caSecrets`                                                     | Names of Kubernetes secrets containing `ca.crt` keys to add to the NiFi truststore                                 | `[ ]`                           |
-| `certManager.refreshSeconds`                                                | How often the sidecar refreshes the NiFi keystore (not truststore) from the cert-manager Kubernetes secrets        | `300`                           |
-| `certManager.resources`                                                     | Memory and CPU resources for the node certificate refresh sidecar                                                  | 100m CPU, 128MiB RAM            |
-| `certManager.replaceDefaultTrustStore`                                      | Use the certManager truststore, not the default Java trusted CA collection (for [e.g.] private OIDC provider)      | `false`                         |
-| `certManager.certDuration`                                                  | NiFi node certificate lifetime (90 days)                                                                           | `2160h`                         |
-| `certManager.caDuration`                                                    | Certificate Authority certificate lifetime (10 years)                                                              | `87660h`                        |
 | **metrics**                                                                     |
 | `metrics.prometheus.enabled`            | Enable prometheus to access nifi metrics endpoint                                                                                    | `false`                                                      |
 | `metrics.prometheus.port`              | Port where Nifi server will expose Prometheus metrics                                                                                  | `9092`                                                      |

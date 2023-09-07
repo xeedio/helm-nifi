@@ -14,7 +14,7 @@ sts:
   startupProbe:
     enabled: true
 
-replicaCount: 3
+replicas: 3
 
 properties:
   webProxyHost: ingress-nginx-controller.ingress-nginx.svc.cluster.local
@@ -34,7 +34,7 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     nginx.ingress.kubernetes.io/affinity: cookie
-    nginx.ingress.kubernetes.io/affinity-mode: persistent    
+    nginx.ingress.kubernetes.io/affinity-mode: persistent
   path: /
   hosts:
   - ingress-nginx-controller.ingress-nginx.svc.cluster.local

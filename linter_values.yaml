@@ -1,0 +1,6 @@
+istio:
+  enabled: true
+  nifi:
+    enabled: true
+    gateways:
+    - istio-system/passthrough

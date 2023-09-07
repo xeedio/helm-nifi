@@ -1,0 +1,72 @@
+{{- $replicas := int .Values.replicas }}
+{{- if and .Values.istio.enabled -}}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ template "apache-nifi.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+    app.kubernetes.io/part-of: nifi
+    app.kubernetes.io/version: {{ .Chart.Version }}
+    helm.sh/chart: {{ include "apache-nifi.chart" . }}
+spec:
+  gateways:
+  {{- range .Values.istio.gateways }}
+  - {{ . }}
+  {{- end }}
+  hosts:
+  {{- range $i := until $replicas }}
+  - {{ printf "node%d-%s" $i $.Values.clusterName }}
+  {{- end }}
+  tls:
+  {{- range $i := until $replicas }}
+  - match:
+    - port: 8443
+      sniHosts:
+      - {{ printf "node%d-%s" $i $.Values.clusterName }}
+    route:
+    - destination:
+        host: {{ printf "nifi-%d.%s" $i $.Release.Namespace }}.svc.cluster.local
+        port:
+          number: {{ $.Values.properties.httpsPort }}
+  {{- end }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ template "apache-nifi.fullname" . }}-extra-hosts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+    app.kubernetes.io/part-of: nifi
+    app.kubernetes.io/version: {{ .Chart.Version }}
+    helm.sh/chart: {{ include "apache-nifi.chart" . }}
+spec:
+  gateways:
+  {{- range .Values.istio.gateways }}
+  - {{ . }}
+  {{- end }}
+  hosts:
+  - {{ .Values.clusterName }}
+{{- range $host := .Values.extraHosts }}
+  - {{ $host }}
+{{- end }}
+  tls:
+  - match:
+    - port: 8443
+      sniHosts:
+      - {{ .Values.clusterName }}
+{{- range $host := .Values.extraHosts }}
+      - {{ $host }}
+{{- end }}
+    route:
+    - destination:
+        host: {{ template "apache-nifi.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: {{ .Values.service.httpsPort }}
+{{- end }}

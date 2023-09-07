@@ -1,90 +1,151 @@
+{{- $replicas := (int .Values.replicas) -}}
+{{- range untilStep 0 $replicas 1 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "apache-nifi.fullname" . }}-headless
+  name: {{ template "apache-nifi.fullname" $ }}-{{ . }}
+  namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ include "apache-nifi.name" . | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    release: {{ .Release.Name | quote }}
-    heritage: {{ .Release.Service | quote }}
-{{- if .Values.headless.annotations }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/name: {{ template "apache-nifi.fullname" $ }}-{{ . }}
+    app.kubernetes.io/part-of: {{ template "apache-nifi.fullname" $ }}
+    app.kubernetes.io/version: {{ $.Chart.Version }}
+    helm.sh/chart: {{ include "apache-nifi.chart" $ }}
+{{- if $.Values.service.annotations }}
   annotations:
-{{ toYaml .Values.headless.annotations | indent 4 }}
+{{ toYaml $.Values.service.annotations | indent 4 }}
 {{- end }}
 spec:
-  type: {{ .Values.headless.type }}
+  type: ClusterIP
   clusterIP: None
+  publishNotReadyAddresses: true
   ports:
-  - port: {{ .Values.properties.httpsPort }}
+  - port: 443
+    targetPort: {{ $.Values.properties.httpsPort }}
+    name: https-external
+  - port: {{ $.Values.properties.httpsPort }}
     name: https
-  - port: {{ .Values.properties.clusterPort }}
+  - port: {{ $.Values.properties.clusterPort }}
     name: cluster
-  - port: {{ .Values.properties.siteToSite.port }}
+  - port: {{ $.Values.properties.loadBalance.port }}
+    name: loadbalance
+{{- if and $.Values.properties.siteToSite.enabled $.Values.properties.siteToSite.port }}
+  - port: {{ $.Values.properties.siteToSite.port }}
     name: site-to-site
+{{- end }}
   selector:
-    app: {{ include "apache-nifi.name" . | quote }}
-    release: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" $ }}
+    statefulset.kubernetes.io/pod-name: nifi-{{ . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "apache-nifi.fullname" $ }}-{{ . }}-ingress
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/name: {{ template "apache-nifi.fullname" $ }}-{{ . }}
+    app.kubernetes.io/part-of: {{ template "apache-nifi.fullname" $ }}
+    app.kubernetes.io/version: {{ $.Chart.Version }}
+    helm.sh/chart: {{ include "apache-nifi.chart" $ }}
+{{- if $.Values.service.annotations }}
+  annotations:
+{{ toYaml $.Values.service.annotations | indent 4 }}
+{{- end }}
+spec:
+  type: ClusterIP
+  publishNotReadyAddresses: true
+  ports:
+  - port: {{ $.Values.properties.httpsPort }}
+    name: https
+  - port: {{ $.Values.properties.clusterPort }}
+    name: cluster
+  - port: {{ $.Values.properties.loadBalance.port }}
+    name: loadbalance
+{{- if and $.Values.properties.siteToSite.enabled $.Values.properties.siteToSite.port }}
+  - port: {{ $.Values.properties.siteToSite.port }}
+    name: site-to-site
+{{- end }}
+  selector:
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" $ }}
+    statefulset.kubernetes.io/pod-name: nifi-{{ . }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ template "apache-nifi.fullname" . }}
   labels:
-    app: {{ include "apache-nifi.name" . | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    release: {{ .Release.Name | quote }}
-    heritage: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: nifi
+    app.kubernetes.io/version: {{ .Chart.Version }}
+    helm.sh/chart: {{ include "apache-nifi.chart" . }}
 {{- if .Values.service.annotations }}
   annotations:
 {{ toYaml .Values.service.annotations | indent 4 }}
 {{- end }}
 spec:
-  type: {{ .Values.service.type }}
-  {{- if .Values.service.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
-  {{- end }}
-  {{- if .Values.service.loadBalancerSourceRanges }}
-  loadBalancerSourceRanges:
-{{ with .Values.service.loadBalancerSourceRanges }}
-{{ toYaml . | indent 4 }}
-  {{- end }}
-  {{- end }}
-  {{- if .Values.service.sessionAffinity }}
-  sessionAffinity: {{ .Values.service.sessionAffinity }}
-  {{- end }}
-  {{- if .Values.service.sessionAffinityConfig }}
-  sessionAffinityConfig:
-{{- with .Values.service.sessionAffinityConfig }}
-{{ toYaml . | indent 4 }}
-  {{- end }}
-  {{- end }}
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
   ports:
-    - port: {{ .Values.service.httpsPort }}
-      name: https
-      targetPort: {{ .Values.properties.httpsPort }}
-      nodePort: {{ .Values.service.nodePort }}
-    - port: {{ .Values.properties.siteToSite.port }}
-      name: site-to-site
-      targetPort: {{ .Values.properties.siteToSite.port }}
-  {{- if .Values.properties.siteToSite.nodePort }}
-      nodePort: {{ .Values.properties.siteToSite.nodePort }}
-  {{- end }}
+  - port: 443
+    targetPort: {{ .Values.properties.httpsPort }}
+    name: https-external
+  - port: {{ .Values.properties.httpsPort }}
+    name: https
+  - port: {{ .Values.properties.clusterPort }}
+    name: cluster
+  - port: {{ .Values.properties.loadBalance.port }}
+    name: loadbalance
+{{- if and .Values.properties.siteToSite.enabled .Values.properties.siteToSite.port }}
+  - port: {{ .Values.properties.siteToSite.port }}
+    name: site-to-site
+{{- end }}
 {{- if .Values.service.processors.enabled }}
 {{- with .Values.service.processors.ports  }}
 {{- range . }}
-    - port: {{ .port }}
-      name: {{ .name }}
-      targetPort: {{ .targetPort }}
-      {{- if eq $.Values.service.type "NodePort" }}
-      nodePort: {{ .nodePort }}
-      {{- end }}
+  - port: {{ .port }}
+    name: {{ .name }}
+    targetPort: {{ .targetPort }}
 {{- end }}
 {{- end }}
 {{- end }}
   selector:
-    app: {{ template "apache-nifi.name" . }}
-    release: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "apache-nifi.fullname" . }}-ingress
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: nifi
+    app.kubernetes.io/version: {{ .Chart.Version }}
+    helm.sh/chart: {{ include "apache-nifi.chart" . }}
+{{- if .Values.service.annotations }}
+  annotations:
+{{ toYaml .Values.service.annotations | indent 4 }}
+{{- end }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.service.httpsPort }}
+    name: https
+    targetPort: {{ .Values.properties.httpsPort }}
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
 {{- if .Values.metrics.prometheus.enabled }}
 ---
 apiVersion: v1
@@ -92,18 +153,19 @@ kind: Service
 metadata:
   name: {{ template "apache-nifi.fullname" . }}-metrics
   labels:
-    app: {{ include "apache-nifi.name" . | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    release: {{ .Release.Name | quote }}
-    heritage: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: nifi
+    app.kubernetes.io/version: {{ .Chart.Version }}
 spec:
+  type: ClusterIP
   ports:
   - name: metrics
     port: {{ .Values.metrics.prometheus.port }}
     protocol: TCP
     targetPort: metrics
   selector:
-    app: {{ template "apache-nifi.name" . }}
-    release: {{ .Release.Name }}
-  type: ClusterIP
-  {{- end }}    
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "apache-nifi.name" . }}
+{{- end }}
