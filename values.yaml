@@ -267,27 +267,27 @@ persistence:
   subPath:
     enabled: false
     name: data
-    size: 100GiB
+    size: 100Gi
 
   ## Storage Capacities for persistent volumes (these are ignored if using one volume with subPath)
   # Storage capacity for the authorizer configuration
   authconfStorage:
-    size: 100MiB
+    size: 100Mi
   # Storage capacity for the 'data' directory, which is used to hold things such as the flow.xml.gz, configuration, state, etc.
   dataStorage:
-    size: 1GiB
+    size: 1Gi
   # Storage capacity for the FlowFile repository
   flowfileRepoStorage:
-    size: 10GiB
+    size: 10Gi
   # Storage capacity for the Content repository
   contentRepoStorage:
-    size: 10GiB
+    size: 10Gi
   # Storage capacity for the Provenance repository
   provenanceRepoStorage:
-    size: 10GiB
+    size: 10Gi
   # Storage capacity for nifi logs
   logStorage:
-    size: 5GiB
+    size: 5Gi
 
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/

@@ -306,9 +306,7 @@ keystore.type.compat=true
 # RuntimePermission("accessClassInPackage."+package) has been granted.
 #
 package.access=sun.misc.,\
-               sun.reflect.,\
-               org.GNOME.Accessibility.,\
-               org.GNOME.Bonobo.
+               sun.reflect.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -320,9 +318,7 @@ package.access=sun.misc.,\
 # checkPackageDefinition.
 #
 package.definition=sun.misc.,\
-                   sun.reflect.,\
-                   org.GNOME.Accessibility.,\
-                   org.GNOME.Bonobo.
+                   sun.reflect.
 
 #
 # Determines whether this properties file can be appended to
@@ -334,7 +330,7 @@ security.overridePropertiesFile=true
 # Determines whether this properties file will be appended to
 # using the system properties file stored at
 # /etc/crypto-policies/back-ends/java.config
-# NOTE: Setting this property to 'true' will disable the ability to use PKCS12 keystores
+#
 security.useSystemPropertiesFile=false
 
 #
@@ -747,11 +743,7 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
-    DH keySize < 2048, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    TLS_RSA_WITH_AES_256_CBC_SHA256, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA256, \
-    TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_GCM_SHA384, TLS_RSA_WITH_AES_128_GCM_SHA256, \
-    DHE_DSS, RSA_EXPORT, DHE_DSS_EXPORT, DHE_RSA_EXPORT, DH_DSS_EXPORT, DH_RSA_EXPORT, DH_anon, \
-    ECDH_anon, DH_RSA, DH_DSS, ECDH, DES_CBC, RC4_40, RC4_128, DES40_CBC, RC2, HmacMD5, \
+    DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
     include jdk.disabled.namedCurves
 
 #
@@ -907,7 +899,8 @@ jdk.tls.legacyAlgorithms= \
 # Note: This property is currently used by OpenJDK's JSSE implementation. It
 # is not guaranteed to be examined and used by other implementations.
 #
-jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37
+jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37, \
+                  ChaCha20-Poly1305 KeyUpdate 2^37
 
 #
 # Cryptographic Jurisdiction Policy defaults
@@ -1383,7 +1376,3 @@ jdk.io.permissionsUseCanonicalPath=false
 #
 # jdk.tls.alpnCharset=UTF-8
 jdk.tls.alpnCharset=ISO_8859_1
-
-# Imported from /etc/crypto-policies/back-ends/java.config
-jdk.tls.ephemeralDHKeySize=2048
-jdk.tls.legacyAlgorithms=

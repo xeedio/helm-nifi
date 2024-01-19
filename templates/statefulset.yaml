@@ -320,12 +320,7 @@ spec:
 {{- end }}
         volumeMounts:
           - mountPath: /opt/nifi/nifi-current/logs
-            {{- if and .Values.persistence.enabled .Values.persistence.subPath.enabled }}
-            name: {{ .Values.persistence.subPath.name }}
-            subPath: logs
-            {{- else }}
             name: "logs"
-            {{- end }}
           - mountPath: /opt/nifi/data
             {{- if and .Values.persistence.enabled .Values.persistence.subPath.enabled }}
             name: {{ .Values.persistence.subPath.name }}
@@ -441,12 +436,7 @@ spec:
 {{ toYaml .Values.logresources | indent 10 }}
         volumeMounts:
         - mountPath: /var/log
-          {{- if and .Values.persistence.enabled .Values.persistence.subPath.enabled }}
-          name: {{ .Values.persistence.subPath.name }}
-          subPath: logs
-          {{- else }}
           name: "logs"
-          {{- end }}
       - name: bootstrap-log
         imagePullPolicy: {{ .Values.sidecar.imagePullPolicy | default "Always" | quote }}
         image: "{{ .Values.sidecar.image }}:{{ .Values.sidecar.tag }}"
@@ -458,12 +448,7 @@ spec:
 {{ toYaml .Values.logresources | indent 10 }}
         volumeMounts:
         - mountPath: /var/log
-          {{- if and .Values.persistence.enabled .Values.persistence.subPath.enabled }}
-          name: {{ .Values.persistence.subPath.name }}
-          subPath: logs
-          {{- else }}
           name: "logs"
-          {{- end }}
       - name: user-log
         imagePullPolicy: {{ .Values.sidecar.imagePullPolicy | default "Always" | quote }}
         image: "{{ .Values.sidecar.image }}:{{ .Values.sidecar.tag }}"
@@ -475,12 +460,7 @@ spec:
 {{ toYaml .Values.logresources | indent 10 }}
         volumeMounts:
         - mountPath: /var/log
-          {{- if and .Values.persistence.enabled .Values.persistence.subPath.enabled }}
-          name: {{ .Values.persistence.subPath.name }}
-          subPath: logs
-          {{- else }}
           name: "logs"
-          {{- end }}
       volumes:
       - name: "bootstrap-conf"
         configMap:
@@ -556,6 +536,8 @@ spec:
         configMap:
           name: {{ .name }}
       {{- end }}
+      - name: logs
+        emptyDir: {}
 {{- if not .Values.persistence.enabled }}
       - name: auth-conf
         emptyDir: {}
@@ -566,8 +548,6 @@ spec:
       - name: content-repository
         emptyDir: {}
       - name: provenance-repository
-        emptyDir: {}
-      - name: logs
         emptyDir: {}
 {{- end }}
 {{- if .Values.extraVolumes }}
@@ -582,7 +562,9 @@ spec:
         {{- range .Values.persistence.accessModes }}
           - {{ . | quote }}
         {{- end }}
+        {{- if .Values.persistence.storageClass }}
         storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.persistence.subPath.size }}
@@ -590,24 +572,15 @@ spec:
 {{- if and .Values.persistence.enabled (not .Values.persistence.subPath.enabled) }}
   volumeClaimTemplates:
     - metadata:
-        name: logs
-      spec:
-        accessModes:
-        {{- range .Values.persistence.accessModes }}
-          - {{ . | quote }}
-        {{- end }}
-        storageClassName: {{ .Values.persistence.storageClass | quote }}
-        resources:
-          requests:
-            storage: {{ .Values.persistence.logStorage.size }}
-    - metadata:
         name: data
       spec:
         accessModes:
         {{- range .Values.persistence.accessModes }}
           - {{ . | quote }}
         {{- end }}
+        {{- if .Values.persistence.storageClass }}
         storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.persistence.dataStorage.size }}
@@ -618,7 +591,9 @@ spec:
         {{- range .Values.persistence.accessModes }}
           - {{ . | quote }}
         {{- end }}
+        {{- if .Values.persistence.storageClass }}
         storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.persistence.flowfileRepoStorage.size }}
@@ -629,7 +604,9 @@ spec:
         {{- range .Values.persistence.accessModes }}
           - {{ . | quote }}
         {{- end }}
+        {{- if .Values.persistence.storageClass }}
         storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.persistence.contentRepoStorage.size }}
@@ -640,7 +617,9 @@ spec:
         {{- range .Values.persistence.accessModes }}
           - {{ . | quote }}
         {{- end }}
+        {{- if .Values.persistence.storageClass }}
         storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.persistence.provenanceRepoStorage.size }}
@@ -651,7 +630,9 @@ spec:
         {{- range .Values.persistence.accessModes }}
           - {{ . | quote }}
         {{- end }}
+        {{- if .Values.persistence.storageClass }}
         storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.persistence.authconfStorage.size }}
